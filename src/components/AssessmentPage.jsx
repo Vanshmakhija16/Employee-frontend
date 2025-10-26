@@ -344,7 +344,7 @@ const COLORS = [
 
             <motion.button
               whileHover={{ scale: 1.05 }}
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/student-dashboard")}
               className="mt-8 bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 rounded-xl font-medium shadow-sm transition"
             >
               Back to Dashboard

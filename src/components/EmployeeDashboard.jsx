@@ -32,6 +32,70 @@ export default function EmployeeDashboard() {
   const navigate = useNavigate();
   const [assessments, setAssessments] = useState([]);
   const [loading, setLoading] = useState(true);
+const [showQuestionnaire, setShowQuestionnaire] = useState(false);
+
+const [questionnaireForm, setQuestionnaireForm] = useState({
+  fullName: "",
+  nickname: "",
+  dob: "",
+  gender: "",
+  pronouns: "",
+  email: "",
+  phone: "",
+  country: "",
+  city: "",
+  education: "",
+  occupation: "",
+  industry: "",
+  employmentStatus: "",
+  languages: "",
+  maritalStatus: "",
+  children: "",
+  interests: "",
+  purpose: [],
+  heardFrom: "",
+});
+
+
+useEffect(() => {
+  const completed = localStorage.getItem("questionnaireCompleted");
+  if (!completed) {
+    setShowQuestionnaire(true);
+  }
+}, []);
+
+const handleQuestionnaireChange = (e) => {
+  const { name, value, type, checked } = e.target;
+
+  if (type === "checkbox") {
+    // For multi-select checkboxes (purpose)
+    let newPurpose = [...questionnaireForm.purpose];
+    if (checked) newPurpose.push(value);
+    else newPurpose = newPurpose.filter((p) => p !== value);
+    setQuestionnaireForm({ ...questionnaireForm, purpose: newPurpose });
+  } else {
+    setQuestionnaireForm({ ...questionnaireForm, [name]: value });
+  }
+};
+
+
+const handleQuestionnaireSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const token = localStorage.getItem("token");
+    await axios.post(`${backend_url}/api/employee-questionnaire`, questionnaireForm, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    localStorage.setItem("questionnaireCompleted", "true"); 
+    setShowQuestionnaire(false);
+    alert("Thank you! Your answers have been saved.");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to save answers. Please try again.");
+  }
+};
+
 
   useEffect(() => {
     async function fetchAssessments() {
@@ -129,7 +193,7 @@ export default function EmployeeDashboard() {
 
         {/* Right: Login */}
         <button
-          onClick={() => navigate("/login")}
+          onClick={() => navigate("/employee-login")}
           className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition shadow-sm"
         >
           Login
@@ -261,6 +325,129 @@ export default function EmployeeDashboard() {
 
 
       </main>
+{showQuestionnaire && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
+      <h2 className="text-2xl font-bold text-center mb-4">Employee Questionnaire</h2>
+      <p className="text-center text-gray-600 mb-6">
+        Please fill out this questionnaire. It helps us personalize your experience.
+      </p>
+
+      <form onSubmit={handleQuestionnaireSubmit} className="space-y-6">
+        {/* ===== Section 1: Basic Info ===== */}
+        <div className="border-b pb-4">
+          <h3 className="font-semibold mb-2">Section 1: Basic Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input type="text" name="fullName" placeholder="Full Name" value={questionnaireForm.fullName} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" required />
+            <input type="text" name="nickname" placeholder="Preferred Name / Nickname" value={questionnaireForm.nickname} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" />
+            <input type="date" name="dob" value={questionnaireForm.dob} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" required />
+            <select name="gender" value={questionnaireForm.gender} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" required>
+              <option value="">Select Gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="non-binary">Non-binary / Third gender</option>
+              <option value="prefer-not">Prefer not to say</option>
+            </select>
+            <select name="pronouns" value={questionnaireForm.pronouns} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded">
+              <option value="">Select Pronouns</option>
+              <option value="he/him">He/Him</option>
+              <option value="she/her">She/Her</option>
+              <option value="they/them">They/Them</option>
+              <option value="prefer-not">Prefer not to say</option>
+            </select>
+            <input type="text" name="pronounsCustom" placeholder="Custom Pronouns" value={questionnaireForm.pronounsCustom} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" />
+          </div>
+        </div>
+
+        {/* ===== Section 2: Contact & Location ===== */}
+        <div className="border-b pb-4">
+          <h3 className="font-semibold mb-2">Section 2: Contact & Location</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input type="email" name="email" placeholder="Email Address" value={questionnaireForm.email} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" required />
+            <input type="text" name="phone" placeholder="Phone Number" value={questionnaireForm.phone} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" />
+            <input type="text" name="country" placeholder="Country" value={questionnaireForm.country} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" />
+            <input type="text" name="city" placeholder="City / State" value={questionnaireForm.city} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" />
+          </div>
+        </div>
+
+        {/* ===== Section 3: Education & Occupation ===== */}
+        <div className="border-b pb-4">
+          <h3 className="font-semibold mb-2">Section 3: Education & Occupation</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <select name="education" value={questionnaireForm.education} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded">
+              <option value="">Highest Level of Education</option>
+              <option value="highschool">High School or equivalent</option>
+              <option value="undergraduate">Undergraduate / College</option>
+              <option value="postgraduate">Postgraduate / Masters</option>
+              <option value="doctorate">Doctorate / PhD</option>
+              <option value="other">Other</option>
+            </select>
+            <input type="text" name="occupation" placeholder="Current Occupation / Profession" value={questionnaireForm.occupation} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" />
+            <input type="text" name="industry" placeholder="Industry / Field" value={questionnaireForm.industry} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" />
+            <select name="employmentStatus" value={questionnaireForm.employmentStatus} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded">
+              <option value="">Employment Status</option>
+              <option value="full-time">Employed full-time</option>
+              <option value="part-time">Employed part-time</option>
+              <option value="student">Student</option>
+              <option value="self-employed">Self-employed / Freelancer</option>
+              <option value="unemployed">Unemployed</option>
+              <option value="retired">Retired</option>
+            </select>
+          </div>
+        </div>
+
+        {/* ===== Section 4: Lifestyle & Interests ===== */}
+        <div className="border-b pb-4">
+          <h3 className="font-semibold mb-2">Section 4: Lifestyle & Interests</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <input type="text" name="languages" placeholder="Languages Spoken" value={questionnaireForm.languages} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" />
+            <select name="maritalStatus" value={questionnaireForm.maritalStatus} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded">
+              <option value="">Marital Status</option>
+              <option value="single">Single</option>
+              <option value="married">Married / Partnered</option>
+              <option value="divorced">Divorced / Separated</option>
+              <option value="widowed">Widowed</option>
+              <option value="prefer-not">Prefer not to say</option>
+            </select>
+            <select name="children" value={questionnaireForm.children} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded">
+              <option value="">Do you have children?</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+            <input type="text" name="interests" placeholder="Interests / Hobbies" value={questionnaireForm.interests} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" />
+          </div>
+        </div>
+
+        {/* ===== Section 5: Website-Specific / Customization ===== */}
+        <div className="pb-4">
+          <h3 className="font-semibold mb-2">Section 5: Website-Specific / Customization</h3>
+          <p className="mb-2 font-medium">What brings you here today?</p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {["Learn / explore","Improve lifestyle / health","Personal growth / self-help","Networking / community","Other"].map((p) => (
+              <label key={p} className="flex items-center gap-1">
+                <input type="checkbox" name="purpose" value={p} onChange={handleQuestionnaireChange} />
+                {p}
+              </label>
+            ))}
+          </div>
+          <select name="heardFrom" value={questionnaireForm.heardFrom} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded">
+            <option value="">How did you hear about us?</option>
+            <option value="social-media">Social media</option>
+            <option value="friend">Friend / referral</option>
+            <option value="search">Search engine</option>
+            <option value="advertisement">Advertisement</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded-lg mt-2">Submit</button>
+      </form>
+    </div>
+  </div>
+)}
+
+
+
     </div>
   );
 }

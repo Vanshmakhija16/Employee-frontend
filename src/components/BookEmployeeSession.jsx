@@ -17,6 +17,8 @@ export default function BookEmployeeSession() {
   const [booking, setBooking] = useState(false);
   const dateScrollRef = useRef(null);
   const slotScrollRef = useRef(null);
+  const [showAuthModal, setShowAuthModal] = useState(false); // new state
+  const [authMode, setAuthMode] = useState("login"); // "login" or "signup"
 
   const scrollContainer = (ref, direction) => {
     if (ref.current) {
@@ -41,6 +43,16 @@ export default function BookEmployeeSession() {
     fetchDoctors();
   }, []);
 
+const handleProtectedBookClick = (doctor) => {
+  const token = localStorage.getItem("token");
+  if (!token || token === "undefined" || token === "") {
+    setShowAuthModal(true); // show login/signup modal
+  } else {
+    handleBookClick(doctor); // open booking modal if logged in
+  }
+};
+
+
   const handleBookClick = async (doctor) => {
     setSelectedDoctor(doctor);
     try {
@@ -62,39 +74,44 @@ export default function BookEmployeeSession() {
     setForm({ ...form, date: formatted, slot: "" });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.date || !form.slot) return setMessage("❌ Please select date and time slot");
-    setBooking(true);
-    try {
-      const token = localStorage.getItem("token");
-      const [startTimeStr, endTimeStr] = form.slot.split("|");
-      const slotStart = new Date(`${form.date}T${startTimeStr}`).toISOString();
-      const slotEnd = new Date(`${form.date}T${endTimeStr}`).toISOString();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!form.date || !form.slot) return setMessage("❌ Please select date and time slot");
+  setBooking(true);
+  try {
+    const token = localStorage.getItem("token");
+    const employeeId = localStorage.getItem("employeeId"); // ✅ store employee id at login/signup
+    if (!employeeId) throw new Error("Employee ID missing");
 
-      await axios.post(
-        `${backend_url}/api/companies`,
-        {
-          doctorId: selectedDoctor._id,
-          slotStart,
-          slotEnd,
-          notes: form.notes,
-          mode: form.mode,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+    const [startTimeStr, endTimeStr] = form.slot.split("|");
+    const slotStart = new Date(`${form.date}T${startTimeStr}`).toISOString();
+    const slotEnd = new Date(`${form.date}T${endTimeStr}`).toISOString();
 
-      setMessage("✅ Session booked successfully!");
-      setTimeout(() => setModalOpen(false), 1500);
-    } catch (err) {
-      console.error(err);
-      setMessage("❌ Failed to book appointment");
-    } finally {
-      setBooking(false);
-    }
-  };
+    await axios.post(
+      `${backend_url}/api/companies`, // ✅ correct endpoint
+      {
+        employeeId,          // ✅ include employeeId
+        doctorId: selectedDoctor._id,
+        slotStart,
+        slotEnd,
+        notes: form.notes,
+        mode: form.mode,
+      },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    setMessage("✅ Session booked successfully!");
+    setTimeout(() => setModalOpen(false), 1500);
+  } catch (err) {
+    console.error(err);
+    setMessage("❌ Failed to book appointment");
+  } finally {
+    setBooking(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 p-6">
@@ -140,12 +157,15 @@ export default function BookEmployeeSession() {
               </p>
 
               <div className="flex flex-col items-center gap-3">
-                <button
-                  onClick={() => handleBookClick(doc)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow transition"
-                >
-                  <Calendar size={18} /> Book Session
-                </button>
+              <button
+                onClick={() => handleProtectedBookClick(doc)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow transition"
+              >
+                <Calendar size={18} /> Book Session
+              </button>
+
+
+
                 <div className="flex gap-3 text-gray-600 mt-2">
                   <a href={`mailto:${doc.email}`}><Mail size={18} /></a>
                   <PhoneCall size={18} />
@@ -314,6 +334,124 @@ export default function BookEmployeeSession() {
           </div>
         </div>
       )}
+
+{showAuthModal && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 relative">
+      <button
+        onClick={() => setShowAuthModal(false)}
+        className="absolute top-4 right-4 text-gray-500 hover:text-gray-800"
+      >
+        X
+      </button>
+
+      <h2 className="text-2xl font-bold text-center mb-4">
+        {authMode === "login" ? "Employee Login" : "Employee Signup"}
+      </h2>
+
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const formData = Object.fromEntries(new FormData(e.target));
+
+          // Build payload correctly
+          let payload;
+          if (authMode === "signup") {
+            if (!formData.name) {
+              alert("Please enter your name");
+              return;
+            }
+            payload = {
+              name: formData.name,
+              email: formData.email,
+              password: formData.password,
+            };
+          } else {
+            payload = {
+              email: formData.email,
+              password: formData.password,
+            };
+          }
+
+          // Basic validation
+          if (!payload.email || !payload.password) {
+            alert("Email and password are required");
+            return;
+          }
+
+          try {
+            const url = authMode === "login"
+              ? `${backend_url}/api/employee/login`
+              : `${backend_url}/api/employee/signup`;
+
+            const res = await axios.post(url, payload, {
+              headers: { "Content-Type": "application/json" },
+            });
+
+            // ✅ Save token, email, and employeeId
+            localStorage.setItem("token", res.data.token);
+            localStorage.setItem("employeeEmail", res.data.employee.email);
+            localStorage.setItem("employeeId", res.data.employee._id); // <-- NEW
+
+            setShowAuthModal(false); 
+            handleBookClick(selectedDoctor); // open booking modal
+          } catch (err) {
+            console.error(err);
+            alert(err.response?.data?.message || "Login/Signup failed. Try again.");
+          }
+
+        }}
+      >
+        {authMode === "signup" && (
+          <input
+            type="text"
+            name="name"
+            placeholder="Full Name"
+            required
+            className="w-full mb-3 border rounded-lg p-2"
+          />
+        )}
+
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          required
+          className="w-full mb-3 border rounded-lg p-2"
+        />
+
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          required
+          className="w-full mb-3 border rounded-lg p-2"
+        />
+
+        <button
+          type="submit"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg"
+        >
+          {authMode === "login" ? "Login" : "Signup"}
+        </button>
+      </form>
+
+      <p className="text-center mt-3 text-gray-600">
+        {authMode === "login" ? "Don't have an account? " : "Already have an account? "}
+        <span
+          className="text-blue-600 cursor-pointer underline"
+          onClick={() =>
+            setAuthMode(authMode === "login" ? "signup" : "login")
+          }
+        >
+          {authMode === "login" ? "Sign up" : "Login"}
+        </span>
+      </p>
+    </div>
+  </div>
+)}
+
+
     </div>
   );
 }
