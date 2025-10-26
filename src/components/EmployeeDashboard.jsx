@@ -328,15 +328,20 @@ const handleQuestionnaireSubmit = async (e) => {
 {showQuestionnaire && (
   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
     <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 max-h-[90vh] overflow-y-auto">
-      <h2 className="text-2xl font-bold text-center mb-4">Employee Questionnaire</h2>
       <p className="text-center text-gray-600 mb-6">
-        Please fill out this questionnaire. It helps us personalize your experience.
+       <b> Please fill out this Form. </b>
       </p>
 
       <form onSubmit={handleQuestionnaireSubmit} className="space-y-6">
         {/* ===== Section 1: Basic Info ===== */}
         <div className="border-b pb-4">
-          <h3 className="font-semibold mb-2">Section 1: Basic Information</h3>
+            <img
+              src={minderyLogo}
+              alt="Mindery Logo"
+              className="w-10 h-10 object-contain"
+            />
+          {/* Title */}
+          <h1 className="text-2xl font-bold text-gray-800">Mindery</h1>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input type="text" name="fullName" placeholder="Full Name" value={questionnaireForm.fullName} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" required />
             <input type="text" name="nickname" placeholder="Preferred Name / Nickname" value={questionnaireForm.nickname} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" />
@@ -361,7 +366,6 @@ const handleQuestionnaireSubmit = async (e) => {
 
         {/* ===== Section 2: Contact & Location ===== */}
         <div className="border-b pb-4">
-          <h3 className="font-semibold mb-2">Section 2: Contact & Location</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input type="email" name="email" placeholder="Email Address" value={questionnaireForm.email} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" required />
             <input type="text" name="phone" placeholder="Phone Number" value={questionnaireForm.phone} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" />
@@ -372,7 +376,6 @@ const handleQuestionnaireSubmit = async (e) => {
 
         {/* ===== Section 3: Education & Occupation ===== */}
         <div className="border-b pb-4">
-          <h3 className="font-semibold mb-2">Section 3: Education & Occupation</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <select name="education" value={questionnaireForm.education} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded">
               <option value="">Highest Level of Education</option>
@@ -398,7 +401,6 @@ const handleQuestionnaireSubmit = async (e) => {
 
         {/* ===== Section 4: Lifestyle & Interests ===== */}
         <div className="border-b pb-4">
-          <h3 className="font-semibold mb-2">Section 4: Lifestyle & Interests</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input type="text" name="languages" placeholder="Languages Spoken" value={questionnaireForm.languages} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded" />
             <select name="maritalStatus" value={questionnaireForm.maritalStatus} onChange={handleQuestionnaireChange} className="w-full border p-2 rounded">
@@ -420,7 +422,6 @@ const handleQuestionnaireSubmit = async (e) => {
 
         {/* ===== Section 5: Website-Specific / Customization ===== */}
         <div className="pb-4">
-          <h3 className="font-semibold mb-2">Section 5: Website-Specific / Customization</h3>
           <p className="mb-2 font-medium">What brings you here today?</p>
           <div className="flex flex-wrap gap-2 mb-3">
             {["Learn / explore","Improve lifestyle / health","Personal growth / self-help","Networking / community","Other"].map((p) => (
